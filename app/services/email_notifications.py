@@ -19,7 +19,7 @@ class EmailNotifications:
         PDF_QR_Service.generate_qr_image('REC-20260521-999')
         msg = Message(
             subject=f'Notificacion de nuevo Recibo # {receipt_number}',
-            sender='kryptonlogicpty@zohomail.com',
+            sender='kryptonlogicpty@gmail.com',
             recipients=['jorgeloy0276@gmail.com', 'kryptonlogicpty@gmail.com'],
             html =html_body
         )
@@ -27,6 +27,7 @@ class EmailNotifications:
             mail.send(msg)
 
         except Exception as e:
+            print( f'Hubo un problema al enviar el correo.. Error: {e}')
             flash(f'Hubo un problema al enviar el correo.. Error: {e}', 'danger')
             return redirect(url_for('receipts.index'))
 
