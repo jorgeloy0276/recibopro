@@ -1,12 +1,7 @@
 # app/services/pdf_service.py
 import os
-import io
-from fileinput import filename
-from os import abort
 
-import app
-from flask import render_template, redirect, url_for, flash
-from flask import current_app
+
 from random import randint
 
 from reportlab.lib.pagesizes import A4

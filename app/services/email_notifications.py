@@ -1,17 +1,14 @@
-from idlelib import config
 
 from flask_mail import Mail, Message
 from app import mail  # Importamos mail desde __init__.py
-from config import Config
+
 from flask import flash, redirect, render_template, request, url_for
 
-# Only for test QR code (Temporal)
-import  os
-from flask import current_app
-from app.services.pdf_service import PDF_QR_Service
-import qrcode
 
-# End of test
+
+from app.services.pdf_service import PDF_QR_Service
+
+
 
 
 
