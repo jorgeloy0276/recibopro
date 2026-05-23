@@ -24,7 +24,8 @@ class EmailNotifications:
             html =html_body
         )
         try:
-            mail.send(msg)
+            # mail.send(msg)
+            pass
 
         except Exception as e:
             print( f'Hubo un problema al enviar el correo.. Error: {e}')
