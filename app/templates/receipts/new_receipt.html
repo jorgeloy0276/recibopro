@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo Recibo — ReciboPro{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <h1 class="text-2xl font-bold text-white tracking-tight">Nuevo Recibo - {{ nuevo_num_recibo }}</h1>
+    <p class="text-indigo-200/70 text-sm mt-0.5">Completa los datos para generar el recibo electrónico</p>
+</div>
+
+<!--        FORMULARIO DE ENCABEZADO        -->
+<form method="POST" action="{{ url_for('receipts.create_receipt') }}" id="receiptForm">
+
+    <!-- ── Datos del cliente ───────────────────────────────── -->
+    <div class="glass rounded-2xl shadow-xl p-5 mb-5">
+        <h2 class="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <span class="bg-brand-500 text-white rounded-lg w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
+            Datos del Cliente
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del Cliente *</label>
+                <input type="text" name="client_name" required placeholder="Ej: Juan Pérez"
+                       class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"/>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Celular (con código país) *</label>
+                <input type="text" name="client_phone" required placeholder="Ej: 50766666666"
+                       class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"/>
+                <p class="text-xs text-slate-400 mt-1">Incluye código de país sin + (ej: 507 para Panamá)</p>
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Forma de Pago *</label>
+                <select name="payment_method" required
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition bg-white">
+                    <option value="">Seleccionar...</option>
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Transferencia">🏦 Transferencia</option>
+<!--                    <option value="Tarjeta de Crédito">💳 Tarjeta de Crédito</option>-->
+<!--                    <option value="Tarjeta de Débito">💳 Tarjeta de Débito</option>-->
+                    <option value="Yappy">📱 Yappy</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Líneas de ítems ─────────────────────────────────── -->
+    <div class="glass rounded-2xl shadow-xl p-5 mb-5">
+        <h2 class="text-base font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <span class="bg-brand-500 text-white rounded-lg w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
+            Detalle de Servicios / Productos
+        </h2>
+
+        <!-- Header (solo desktop) -->
+        <div class="hidden sm:grid grid-cols-12 gap-2 text-xs font-bold text-slate-400 uppercase tracking-wide mb-2 px-1">
+            <div class="col-span-4">Descripción</div>
+            <div class="col-span-2">Cantidad</div>
+            <div class="col-span-2">P. Unit. ($)</div>
+            <div class="col-span-2">Desc. (%)</div>
+            <div class="col-span-1">Monto</div>
+            <div class="col-span-1"></div>
+        </div>
+
+        <div id="itemsContainer" class="space-y-3">
+            <!-- Las filas se insertan aquí por JS -->
+        </div>
+
+        <button type="button" onclick="addItem()"
+                class="mt-4 w-full border-2 border-dashed border-brand-300 hover:border-brand-500 text-brand-500 hover:text-brand-600 font-semibold py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-1">
+            ＋ Agregar línea
+        </button>
+    </div>
+
+    <!-- ── Total en vivo ───────────────────────────────────── -->
+    <div class="glass rounded-2xl shadow-xl p-5 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Subtotal / Total</p>
+                <div class="flex items-baseline gap-3 mt-1">
+                    <span class="text-sm text-slate-500">Subtotal: <span id="liveSubtotal"
+                                                                         class="font-semibold text-slate-700">$0.00</span></span>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">TOTAL A PAGAR</p>
+                <div class="live-total pulse-red" id="liveTotal">$0.00</div>
+                <p class="text-xs text-red-400 mt-0.5 font-medium">← Se actualiza automáticamente</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Botón guardar ───────────────────────────────────── -->
+    <button type="submit"
+            class="w-full bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-bold py-3.5 rounded-2xl shadow-xl text-base transition-all duration-200 flex items-center justify-center gap-2">
+        🧾 Guardar y Generar PDF
+    </button>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let itemCount = 0;
+
+function addItem() {
+  const container = document.getElementById('itemsContainer');
+  const row = document.createElement('div');
+  row.className = 'item-row bg-slate-50 rounded-xl p-3 border border-slate-100';
+  row.dataset.index = itemCount;
+  row.innerHTML = `
+    <div class="grid grid-cols-12 gap-2 items-center">
+      <!-- Descripción -->
+      <div class="col-span-12 sm:col-span-4">
+        <label class="sm:hidden text-xs font-semibold text-slate-400 mb-0.5 block">Descripción</label>
+        <input type="text" name="description[]" placeholder="Descripción del servicio" required
+               class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 transition" />
+      </div>
+      <!-- Cantidad -->
+      <div class="col-span-4 sm:col-span-2">
+        <label class="sm:hidden text-xs font-semibold text-slate-400 mb-0.5 block">Cantidad</label>
+        <input type="number" name="quantity[]" placeholder="1" min="1" step="1" required
+               class="item-qty w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 transition" />
+      </div>
+      <!-- Precio unitario -->
+      <div class="col-span-4 sm:col-span-2">
+        <label class="sm:hidden text-xs font-semibold text-slate-400 mb-0.5 block">P. Unit. ($)</label>
+        <input type="number" name="unit_price[]" placeholder="0.00" min="0" step="0.01" required
+               class="item-price w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 transition" />
+      </div>
+      <!-- Descuento -->
+      <div class="col-span-4 sm:col-span-2">
+        <label class="sm:hidden text-xs font-semibold text-slate-400 mb-0.5 block">Desc. (%)</label>
+        <input type="number" name="discount[]" placeholder="0" min="0" max="100" step="0.1" value="0"
+               class="item-disc w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 transition" />
+      </div>
+      <!-- Monto calculado -->
+      <div class="col-span-10 sm:col-span-1 flex items-center">
+        <div>
+          <label class="sm:hidden text-xs font-semibold text-slate-400 mb-0.5 block">Monto</label>
+          <span class="item-amount font-mono font-bold text-brand-700 text-sm">$0.00</span>
+        </div>
+      </div>
+      <!-- Eliminar -->
+      <div class="col-span-2 sm:col-span-1 flex justify-end">
+        <button type="button" onclick="removeItem(this)"
+                class="text-red-400 hover:text-red-600 hover:bg-red-50 w-8 h-8 rounded-lg flex items-center justify-center transition text-lg font-bold">
+          ×
+        </button>
+      </div>
+    </div>`;
+
+  // Eventos para recalcular en tiempo real
+  ['item-qty','item-price','item-disc'].forEach(cls => {
+    row.querySelector('.' + cls).addEventListener('input', recalcAll);
+  });
+
+  container.appendChild(row);
+  itemCount++;
+  recalcAll();
+}
+
+function removeItem(btn) {
+  btn.closest('.item-row').remove();
+  recalcAll();
+}
+
+function recalcAll() {
+  let subtotal = 0;
+  document.querySelectorAll('.item-row').forEach(row => {
+    const qty   = parseFloat(row.querySelector('.item-qty').value)   || 0;
+    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+    const disc  = parseFloat(row.querySelector('.item-disc').value)  || 0;
+    const amount = qty * price * (1 - disc / 100);
+    row.querySelector('.item-amount').textContent = '$' + amount.toFixed(2);
+    subtotal += amount;
+  });
+  document.getElementById('liveSubtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('liveTotal').textContent    = '$' + subtotal.toFixed(2);
+}
+
+// Iniciar con una fila vacía
+addItem();
+
+
+
+</script>
+
+{% endblock %}

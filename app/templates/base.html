@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}ReciboPro{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Sora', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!--  Overlay  para spinner  -->
+    <!--    <link rel="stylesheet" href="/app/static/styles.css"/>-->
+    <!--    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>-->
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+          rel="stylesheet">
+    <link rel="shortcut icon" href="{{ url_for('static' , filename='favicon.png') }}" type="image/x-icon">
+
+
+    <style>
+        body {
+            font-family: 'Sora', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+        }
+
+        .card-hover {
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, .18);
+        }
+
+        /* Total en rojo llamativo */
+        .live-total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #dc2626;
+            text-shadow: 0 0 20px rgba(220, 38, 38, .25);
+            letter-spacing: -.5px;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% {
+                opacity: 1
+            }
+            50% {
+                opacity: .7
+            }
+        }
+
+        .pulse-red {
+            animation: pulse-red 1.5s ease-in-out infinite;
+        }
+    </style>
+
+    <style>
+        #loading-overlay {
+            display: none; /* oculto por defecto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Spinner */
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #4f46e5;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen gradient-bg">
+<!--    Overlay -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+<!-- NAV -->
+<nav class="glass sticky top-0 z-50 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="{{ url_for('receipts.index') }}"
+           class="flex items-center gap-2 group flex justify-between items-center link-loading">
+            <span class="text-2xl">🧾</span>
+            <span class="text-brand-700 font-bold text-lg tracking-tight">ReciboPro Version 1.0</span>
+            <span class="text-red-500 text-md text-center">Beta Version</span>
+        </a>
+        <!--        <a href="#"-->
+        <!--           class="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow transition-all duration-200 flex items-center gap-1">-->
+        <!--            <span>＋</span> Nuevo Recibo-->
+        <!--        </a>-->
+    </div>
+</nav>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="max-w-6xl mx-auto px-4 pt-4 space-y-2">
+    {% for category, message in messages %}
+    <div class="rounded-xl px-4 py-3 text-sm font-medium shadow
+            {% if category == 'error' %}bg-red-50 border border-red-200 text-red-700
+            {% else %}bg-emerald-50 border border-emerald-200 text-emerald-700{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- CONTENT -->
+<main class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="text-center text-sm text-indigo-200/50 py-6">
+    ReciboPro · Sistema de Recibos Electrónicos
+    <span>Desarrollado por Jorge E. Hernandez para Krypton Logic </span>
+</footer>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+<script>
+    const form = document.getElementById("receiptForm");
+    const overlay = document.getElementById("loading-overlay");
+
+    // Selecciona todos los enlaces que deben mostrar el spinner
+    const links = document.querySelectorAll(".link-loading");
+
+    links.forEach(link => {
+        link.addEventListener("click", () => {
+            overlay.style.display = "flex"; // mostrar animación y mostrar overlay
+        });
+    });
+
+    // Muestra animacion cuando se haga submit o alguna funcion
+    form.addEventListener("submit", function () {
+
+        overlay.style.display = "flex"; // mostrar animación
+    });
+
+    //  ocultar overlay cuando termine la respuesta
+    window.addEventListener("load", function () {
+        overlay.style.display = "none";
+    });
+</script>
+</html>

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}  {{ receipts.receipt_number }}  — ReciboPro{% endblock %}
+
+{% block content %}
+
+<!-- Botonera superior -->
+<div class="flex flex-wrap items-center gap-3 mb-5">
+    <a href="{{ url_for('receipts.index') }}"
+       class="flex items-center gap-1.5 text-indigo-200 hover:text-white text-sm font-semibold transition link-loading">
+        ← Ir a Inicio
+    </a>
+    <form method="POST" action="{{ url_for('receipts.regenerate_pdf',id=receipts.id ) }}" class="ml-auto link-loading">
+        <button type="submit"
+                class="bg-indigo-700/70 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+            🔄 Regenerar PDF
+        </button>
+    </form>
+    {% if pdf_url %}
+    <a href="{{ pdf_url }}" target="_blank"
+       class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 link-loading">
+        📥 Descargar PDF
+    </a>
+    {% endif %}
+    {% if wa_link %}
+    <a href="{{ wa_link }}" target="_blank"
+       class="bg-[#25D366] hover:bg-[#1ebe5e] text-white text-sm font-semibold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.135.563 4.135 1.545 5.865L0 24l6.335-1.535A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.65-.497-5.18-1.367l-.37-.22-3.76.91.947-3.668-.242-.378A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+        </svg>
+        Enviar por WhatsApp
+    </a>
+    {% endif %}
+
+</div>
+
+<!-- Recibo visual -->
+<div class="glass rounded-2xl shadow-2xl overflow-hidden">
+
+    <!-- Encabezado del recibo -->
+    <div class="bg-gradient-to-r from-brand-900 to-brand-700 px-6 py-6 text-white">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+                <p class="text-indigo-300 text-xs font-semibold uppercase tracking-widest mb-1">Recibo de Servicios</p>
+                <h1 class="text-3xl font-bold font-mono tracking-tight">{{ receipts.receipt_number }}</h1>
+                <p class="text-indigo-200 text-sm mt-1">
+                    <!--        FORMATEA FECHAS A FECHA HORA            -->
+                    {% if receipts.receipt_date %}
+                    {{ receipts.receipt_date.strftime('%d de %B de %Y · %H:%M hrs') }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-left sm:text-right">
+                <p class="text-indigo-300 text-xs font-semibold uppercase tracking-widest mb-1">Total</p>
+                <p class="text-4xl font-bold">${{ "%.2f"|format(receipts.total) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Info cliente -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+    <div class="bg-slate-50 rounded-xl p-4">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Cliente</p>
+        <p class="font-bold text-slate-800 text-sm">{{ receipts.client_name }}</p>
+    </div>
+    <div class="bg-slate-50 rounded-xl p-4">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Celular</p>
+        <p class="font-bold text-slate-800 text-sm">{{ receipts.client_phone }}</p>
+    </div>
+    <div class="bg-slate-50 rounded-xl p-4">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Forma de Pago</p>
+        <span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full">
+          {{ receipts.payment_method }}
+        </span>
+    </div>
+</div>
+
+<!-- Tabla de items (desktop) -->
+<div class="hidden sm:block rounded-xl overflow-hidden border border-slate-100 md:mt-3">
+    <table class="w-full text-sm">
+        <thead>
+        <tr class="bg-brand-900/90 text-indigo-100">
+            <th class="px-4 py-2.5 text-left font-semibold">Descripción</th>
+            <th class="px-4 py-2.5 text-right font-semibold">Cant.</th>
+            <th class="px-4 py-2.5 text-right font-semibold">P. Unit.</th>
+            <th class="px-4 py-2.5 text-right font-semibold">Desc.</th>
+            <th class="px-4 py-2.5 text-right font-semibold">Monto</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for item in items_rows %}
+        <tr class="border-t border-slate-100 {% if loop.index is odd %}bg-slate-50{% else %}bg-indigo-200 border-1 border-indigo-800{% endif %}">
+            <td class="px-4 py-3 text-slate-600">{{ item.description }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ "%.2f"|format(item.quantity) }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">${{ "%.2f"|format(item.unit_price) }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">
+                {% if item.discount > 0 %}
+                <span class="text-amber-400 font-semibold">{{ "%.1f"|format(item.discount) }}%</span>
+                {% else %}—{% endif %}
+            </td>
+            <td class="px-4 py-3 text-right font-bold text-brand-500">${{ "%.2f"|format(item.amount) }}</td>
+        </tr>
+        {% endfor %}
+
+
+        </tbody>
+    </table>
+</div>
+<!-- Cards de items (mobile) -->
+<div class="sm:hidden space-y-2">
+    {% for item in items_rows %}
+    <div class="bg-slate-50 rounded-xl p-5 mt-4  border border-slate-100">
+        <p class="font-semibold text-slate-800 text-sm mb-2">{{ item.description }}</p>
+        <div class="grid grid-cols-2 gap-1 text-xs text-slate-500">
+            <span>Cant: <strong>{{ "%.2f"|format(item.quantity) }}</strong></span>
+            <span>P.Unit: <strong>${{ "%.2f"|format(item.unit_price) }}</strong></span>
+            <span>Desc: <strong>{% if item.discount > 0 %}{{ "%.1f"|format(item.discount) }}%{% else %}—{% endif %}</strong></span>
+            <span class="text-brand-600 font-bold">Monto: ${{ "%.2f"|format(item.amount) }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+<!-- Totales -->
+<div class="flex justify-end">
+    <div class="w-full sm:w-64 space-y-2">
+        <div class="flex justify-between text-sm text-slate-300 border-b border-slate-100 pb-2 pt-3">
+            <span>Subtotal</span>
+            <span class="font-semibold">${{ "%.2f"|format(receipts.subtotal) }}</span>
+        </div>
+        <div class="flex justify-between items-center bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl px-4 py-3">
+            <span class="font-bold text-sm">TOTAL</span>
+            <span class="font-bold text-xl">${{ "%.2f"|format(receipts.total) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- PDF embed (si existe) -->
+{% if pdf_url %}
+<div>
+    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Vista Previa del PDF</p>
+    <div class="rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100" style="height: 420px;">
+        <iframe src="{{ pdf_url }}" class="w-full h-full" title="Vista del recibo PDF"></iframe>
+    </div>
+    <p class="text-xs text-slate-400 mt-1 text-center">
+        Si no carga, <a href="{{ pdf_url }}" target="_blank" class="text-brand-500 hover:underline">ábrelo aquí</a>
+    </p>
+</div>
+{% endif %}
+
+
+<!-- Botones inferiores -->
+<div class="flex flex-col sm:flex-row gap-3 mt-5">
+    <a href="{{ url_for('receipts.index') }}"
+       class="flex-1 text-center bg-slate-700/60 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl shadow transition link-loading">
+        ← Ir a Inicio
+    </a>
+    <a href="{{ url_for('receipts.nuevo_recibo') }}"
+       class="flex-1 text-center bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl shadow transition link-loading">
+        🧾 Nuevo Recibo
+    </a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="#"
+   class="bg-blue-500 text-white px-3 py-1 rounded">
+    Generar QR
+</a>
+
+{{ img }}
+
+
+<!-- TABLA -->
+<table class="w-[85%] mx-auto border">
+
+    <thead class="bg-gray-800 text-white">
+
+    <tr>
+        <th class="p-3 text-left text-sm">Nº Recibo</th>
+        <th class="p-3 text-left text-sm">Fecha</th>
+        <th class="p-3 text-left text-sm">Cliente</th>
+        <th class="p-3 text-left text-sm">Teléfono</th>
+        <th class="p-3 text-left text-sm">Total</th>
+        <th class="p-3 text-left text-sm">Método</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for recibo in recibos %}
+
+    <tr class="border-b hover:bg-gray-100">
+
+        <td class="text-sm">{{ recibo.receipt_number }}</td>
+        <td class="text-sm">{{ recibo.date }}</td>
+        <td class="text-sm">{{ recibo.client_name }}</td>
+        <td class="text-sm">{{ recibo.client_phone }}</td>
+        <td class="text-sm">{{ recibo.total }}</td>
+        <td class="text-sm">{{ recibo.payment_method }}</td>
+
+
+
+    </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}
